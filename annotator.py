@@ -12,38 +12,34 @@ import numpy as np
 from playsound import playsound
 
 from ui_annotator import Ui_MainWindow
+from new_session import NewSession
 
 
 
 class Annotator(QMainWindow):
-    def __init__(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, d_ind=0):
+    def __init__(self):
         QMainWindow.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
-        print()
 
         # set up UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # this is so the spectrum viewer works properly
-        lay = QVBoxLayout(self.ui.scrollAreaWidgetContents)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self.ui.viewer)
-        self.ui.scrollArea.setWidgetResizable(True)
+        # connect new and load 
+        self.ui.actionNew.triggered.connect(self.new_session)
+        self.ui.actionLoad.triggered.connect(self.load_session)
 
-        # connect actions and buttons
-        self.ui.playButton.clicked.connect(self.play)
-        self.ui.saveButton.clicked.connect(self.save)
-        self.ui.nextButton.clicked.connect(self.next_)
-        self.ui.prevButton.clicked.connect(self.prev)
-        self.ui.actionPlay.triggered.connect(self.play)
-        self.ui.actionSave.triggered.connect(self.save)
-        self.ui.actionNext.triggered.connect(self.next_)
-        self.ui.actionPrev.triggered.connect(self.prev)
-        self.ui.actionOpen.triggered.connect(self.open)
-        # self.ui.actionExit.triggered.connect(self.exit)
+        # class vars updated in load clips
+        self.d_fp = None
+        self.s_fp = None
+        self.csv_fn = None
+        self.ss_fp = None
+        self.min_dur = None
+        self.f_ind = None
+        self.d_ind = None
+        self.wav_files = None
 
-        # class vars
+    def load_clips(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, d_ind=0):
         self.d_fp = d_fp
         self.s_fp = s_fp
         self.csv_fn = csv_fn
@@ -60,21 +56,57 @@ class Annotator(QMainWindow):
                     self.wav_files.append(filename)
             break  # activate this line if only top level of directory wanted
 
-        # set up the csv table
-        self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
+        if not self.wav_files:
+            self.logger.info('There are no wav files in {}'.format(self.d_fp))
+        else:
+            # set up the csv table
+            self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
 
-        # start by loading the first clip
-        self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
+            # enable buttons and connect to slots
+            self.ui.playButton.setEnabled(True)
+            self.ui.saveButton.setEnabled(True)
+            self.ui.nextButton.setEnabled(True)
+            self.ui.prevButton.setEnabled(True)
+            self.ui.playButton.clicked.connect(self.play)
+            self.ui.saveButton.clicked.connect(self.save)
+            self.ui.nextButton.clicked.connect(self.next_)
+            self.ui.prevButton.clicked.connect(self.prev)
+
+            # enable menu actions and connect to slots
+            self.ui.actionPlay.setEnabled(True)
+            self.ui.actionSave.setEnabled(True)
+            self.ui.actionNext.setEnabled(True)
+            self.ui.actionPrev.setEnabled(True)
+            self.ui.actionPlay.triggered.connect(self.play)
+            self.ui.actionSave.triggered.connect(self.save)
+            self.ui.actionNext.triggered.connect(self.next_)
+            self.ui.actionPrev.triggered.connect(self.prev)
+
+            # this is so the spectrum viewer works properly
+            lay = QVBoxLayout(self.ui.scrollAreaWidgetContents)
+            lay.setContentsMargins(0, 0, 0, 0)
+            lay.addWidget(self.ui.viewer)
+            self.ui.scrollArea.setWidgetResizable(True)
+
+            # start by loading the first clip
+            self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
 
     def curr_filename(self):
         return self.wav_files[self.f_ind]
 
     def curr_save_filename(self):
-        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.d_ind)        
+        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.d_ind)
 
-    def open(self):
-        folder = QFileDialog.getExistingDirectory(None, 'Select a folder:', '', QFileDialog.ShowDirsOnly)
-        self.logger.info('selected {}'.format(folder))
+    def new_session(self):
+        dialog = NewSession(self)
+        dialog.show()
+
+    def load_session(self):
+        ss_fp, _ = QFileDialog.getOpenFileName(self, filter='Text files (*.txt)')
+        with open(ss_fp, 'r') as f:
+            d_fp, s_fp, csv_fn, min_dur, f_ind, d_ind = f.readline().strip().split(',')
+        self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(d_ind))
+        self.logger.info('loaded {}'.format(ss_fp))
 
     def play(self):
         playsound('./support/temp.wav')  # TODO: do on a diff thread
@@ -121,6 +153,3 @@ class Annotator(QMainWindow):
 
         self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         self.logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
-
-    # def exit(self):
-    #     logger.info('not implemented')

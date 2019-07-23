@@ -77,43 +77,13 @@ if __name__ == '__main__':
         except:
             logger.error('Could not set the app model ID. If the plaftorm is older than Windows 7, this is normal.')
 
-    app = QApplication(sys.argv)
-
-    if platform.system() == 'Darwin':
+    elif platform.system() == 'Darwin':
         pass
         # logger.info('Applying Mac OS-specific setup')
 
-    if len(sys.argv) < 2:
-        print('You must supply either a saved session textfile or the datapath, savepath, \
-and csvfilename. See python main.py -h for more info.')
-    else:
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('-d', dest='datapath', type=str, 
-            help='Full path to folder with audio clips.')
-        parser.add_argument('-s', dest='savepath', type=str,
-            help='Full path to existing folder where new clips will be saved.')
-        parser.add_argument('-f', dest='csvfile', type=str,
-            help='The full path and filename of the csvfile where data tags will be saved.')
-        parser.add_argument('-t', dest='savesession', default='./support/ss.txt', type=str,
-            help='The filepath of the saved session you want to save.')
-        parser.add_argument('-l', dest='loadsession', type=str,
-            help='The filepath of the saved session you want to load. This will be overwritten in next save.')
-        parser.add_argument('-m', dest='min_dur', default=1.0, type=float,
-            help='The minimum duration in seconds of a miniclip.')
-        args = parser.parse_args()
-
-        if args.loadsession is not None:  # if provided with a session to load
-            with open(args.loadsession, 'r') as f:
-                data_folder, save_folder, csv_filename, min_dur, f_ind, d_ind = f.readline().strip().split(',')
-                window = Annotator(data_folder, save_folder, csv_filename, args.loadsession, 
-                    float(min_dur), int(f_ind), int(d_ind))
-        else:
-            if '.csv' not in args.csvfile:
-                raise Exception('must be a csvfile (got {})'.format(args.csvfile))
-            window = Annotator(args.datapath, args.savepath, args.csvfile, args.savesession, args.min_dur)
-
-        window.show()
-        return_code = app.exec_()
-        del window  # prevent mac errors
-        sys.exit(return_code)
+    app = QApplication(sys.argv)
+    window = Annotator()
+    window.show()
+    return_code = app.exec_()
+    del window  # prevent mac errors
+    sys.exit(return_code)
