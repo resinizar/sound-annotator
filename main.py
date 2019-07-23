@@ -1,13 +1,13 @@
 import sys
 import os
-import os.path
+from os import path
 import errno
 import platform
 import logging
 import logging.handlers
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QApplication, QSplashScreen, QSizePolicy, QVBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QApplication, QSplashScreen, QSizePolicy, QVBoxLayout, QTableWidgetItem
 from PyQt5.QtGui import QPixmap, QSurfaceFormat, QImage, QPainter, QBrush, QPen
 import appdirs
 import numpy as np
@@ -23,11 +23,14 @@ from ui import Ui_MainWindow
 class SoundAnnotator(QMainWindow):
     def __init__(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, d_ind=0):
         QMainWindow.__init__(self)
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(self.__class__.__name__)
+        print()
 
         # set up UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # this is so the spectrum viewer works properly
         lay = QVBoxLayout(self.ui.scrollAreaWidgetContents)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.addWidget(self.ui.viewer)
@@ -61,8 +64,11 @@ class SoundAnnotator(QMainWindow):
                     self.wav_files.append(filename)
             break  # activate this line if only top level of directory wanted
 
+        # set up the csv table
+        self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
+
         # start by loading the first clip
-        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
+        self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
 
     def curr_filename(self):
         return self.wav_files[self.f_ind]
@@ -77,13 +83,11 @@ class SoundAnnotator(QMainWindow):
         playsound('./support/temp.wav')  # TODO: do on a diff thread
 
     def save(self):
-        savepath = os.path.join(self.s_fp, self.curr_save_filename())
+        savepath = path.join(self.s_fp, self.curr_save_filename())
         shutil.copy('./support/temp.wav', savepath)  # TODO: only do this if csv successful
         logger.info('saved to {}'.format(savepath))
 
-        with open(os.path.join(self.s_fp, self.csv_fn), 'a') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow([savepath, self.ui.tag.text()])  
+        self.ui.table.add_row([savepath, self.ui.tag.text()])
 
         self.d_ind += 1  
 
@@ -102,7 +106,7 @@ class SoundAnnotator(QMainWindow):
 
         self.d_ind = highest + 1
 
-        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
+        self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def prev(self):
@@ -118,12 +122,11 @@ class SoundAnnotator(QMainWindow):
 
         self.d_ind = highest + 1
 
-        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
+        self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def quit(self):
         logger.info('quit')
-
 
 
 def qt_message_handler(mode, context, message):
@@ -138,6 +141,7 @@ def qt_message_handler(mode, context, message):
         logger.critical(message)
     else:
         logger.debug(message)
+
 
 if __name__ == '__main__':
     # make the Python warnings go to logger
@@ -154,7 +158,7 @@ if __name__ == '__main__':
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-    log_fp = os.path.join(log_dir, log_filename)
+    log_fp = path.join(log_dir, log_filename)
 
     # log to file
     file_handler = logging.handlers.RotatingFileHandler(log_fp, maxBytes=100000, backupCount=5)
