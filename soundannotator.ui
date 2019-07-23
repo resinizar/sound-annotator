@@ -76,7 +76,7 @@
         <item>
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
-           <widget class="QPushButton" name="play_button">
+           <widget class="QPushButton" name="playButton">
             <property name="maximumSize">
              <size>
               <width>85</width>
@@ -92,7 +92,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="save_button">
+           <widget class="QPushButton" name="saveButton">
             <property name="maximumSize">
              <size>
               <width>85</width>
@@ -108,7 +108,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="next_button">
+           <widget class="QPushButton" name="nextButton">
             <property name="maximumSize">
              <size>
               <width>85</width>
@@ -124,7 +124,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="prev_button">
+           <widget class="QPushButton" name="prevButton">
             <property name="maximumSize">
              <size>
               <width>85</width>
@@ -160,17 +160,17 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="action_open"/>
+    <addaction name="actionOpen"/>
     <addaction name="separator"/>
-    <addaction name="action_play"/>
-    <addaction name="action_save"/>
-    <addaction name="action_next"/>
-    <addaction name="action_prev"/>
+    <addaction name="actionPlay"/>
+    <addaction name="actionSave"/>
+    <addaction name="actionNext"/>
+    <addaction name="actionPrev"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action_open">
+  <action name="actionOpen">
    <property name="text">
     <string>Open Folder</string>
    </property>
@@ -178,7 +178,7 @@
     <string>Ctrl+O</string>
    </property>
   </action>
-  <action name="action_play">
+  <action name="actionPlay">
    <property name="text">
     <string>Play Selection</string>
    </property>
@@ -186,7 +186,7 @@
     <string>Ctrl+P</string>
    </property>
   </action>
-  <action name="action_save">
+  <action name="actionSave">
    <property name="text">
     <string>Save Selection</string>
    </property>
@@ -194,7 +194,7 @@
     <string>Ctrl+S</string>
    </property>
   </action>
-  <action name="action_next">
+  <action name="actionNext">
    <property name="text">
     <string>Next</string>
    </property>
@@ -202,17 +202,12 @@
     <string>Ctrl+N</string>
    </property>
   </action>
-  <action name="action_prev">
+  <action name="actionPrev">
    <property name="text">
     <string>Previous</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+B</string>
-   </property>
-  </action>
-  <action name="actionQuit">
-   <property name="text">
-    <string>Quit</string>
    </property>
   </action>
  </widget>

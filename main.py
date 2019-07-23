@@ -37,15 +37,16 @@ class SoundAnnotator(QMainWindow):
         self.ui.scrollArea.setWidgetResizable(True)
 
         # connect actions and buttons
-        self.ui.play_button.clicked.connect(self.play)
-        self.ui.save_button.clicked.connect(self.save)
-        self.ui.next_button.clicked.connect(self.next_)
-        self.ui.prev_button.clicked.connect(self.prev)
-        self.ui.action_play.triggered.connect(self.play)
-        self.ui.action_save.triggered.connect(self.save)
-        self.ui.action_next.triggered.connect(self.next_)
-        self.ui.action_prev.triggered.connect(self.prev)
-        # self.ui.action_open.triggered.connect(self.open)
+        self.ui.playButton.clicked.connect(self.play)
+        self.ui.saveButton.clicked.connect(self.save)
+        self.ui.nextButton.clicked.connect(self.next_)
+        self.ui.prevButton.clicked.connect(self.prev)
+        self.ui.actionPlay.triggered.connect(self.play)
+        self.ui.actionSave.triggered.connect(self.save)
+        self.ui.actionNext.triggered.connect(self.next_)
+        self.ui.actionPrev.triggered.connect(self.prev)
+        # self.ui.actionOpen.triggered.connect(self.open)
+        # self.ui.actionExit.triggered.connect(self.exit)
 
         # class vars
         self.d_fp = d_fp
@@ -125,8 +126,8 @@ class SoundAnnotator(QMainWindow):
         self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
-    def quit(self):
-        logger.info('quit')
+    # def exit(self):
+    #     logger.info('not implemented')
 
 
 def qt_message_handler(mode, context, message):
