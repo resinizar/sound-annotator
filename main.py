@@ -31,10 +31,8 @@ def qt_message_handler(mode, context, message):
 if __name__ == '__main__':
     # make the Python warnings go to logger
     logging.captureWarnings(True)
-
     log_format = '%(asctime)s %(levelname)s %(name)s: %(message)s'
     formatter = logging.Formatter(log_format)
-
     log_filename = 'log.txt'
     dirs = appdirs.AppDirs('Annotator', '')
     log_dir = dirs.user_data_dir
@@ -54,27 +52,15 @@ if __name__ == '__main__':
     rootLogger.setLevel(logging.DEBUG)
     rootLogger.addHandler(file_handler)
 
-    if hasattr(sys, 'frozen'):
-        # redirect stdout and stderr to the logger if this is a py2app or pyinstaller bundle
-        sys.stdout = StreamToLogger(logging.getLogger('STDOUT'), logging.INFO)
-        sys.stderr = StreamToLogger(logging.getLogger('STDERR'), logging.ERROR)
-    else:
-        # log to console if this is not a py2app or pyinstaller bundle
-        console = logging.StreamHandler()
-        console.setLevel(logging.DEBUG)
-        console.setFormatter(formatter)
-        rootLogger.addHandler(console)
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    console.setFormatter(formatter)
+    rootLogger.addHandler(console)
 
     # make Qt logs go to logger
     QtCore.qInstallMessageHandler(qt_message_handler)
-
     logger = logging.getLogger(__name__)
-
     logger.info('Annotator %s starting on %s (%s)', '0.0.0.0', platform.system(), sys.platform)
-
-    # make sure Qt loads the desktop OpenGL stack, rather than OpenGL ES or a software OpenGL
-    # only the former option is compatible with the use of PyOpenGL
-    # QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_UseDesktopOpenGL)
 
     if platform.system() == 'Windows':
         logger.info('Applying Windows-specific setup')
@@ -94,27 +80,8 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     if platform.system() == 'Darwin':
-        logger.info('Applying Mac OS-specific setup')
-        # # help the py2app-packaged application find the Qt plugins (imageformats and platforms)
-        # pluginsPath = os.path.normpath(os.path.join(QApplication.applicationDirPath(), os.path.pardir, 'PlugIns'))
-        # logger.info('Adding the following to the Library paths: %s', pluginsPath)
-        # QApplication.addLibraryPath(pluginsPath)
-
-        # # on macOS, OpenGL 2.1 does not work well
-        # # request a 3.2 Core context instead
-        # format = QSurfaceFormat()
-        # format.setDepthBufferSize(24)
-        # format.setStencilBufferSize(8)
-        # format.setVersion(3, 2)
-        # format.setProfile(QSurfaceFormat.CoreProfile)
-        # QSurfaceFormat.setDefaultFormat(format)
-
-    # # Splash screen
-    # pixmap = QPixmap(':/images/splash.png')
-    # splash = QSplashScreen(pixmap)
-    # splash.show()
-    # splash.showMessage('Initializing the audio subsystem')
-    # app.processEvents()
+        pass
+        # logger.info('Applying Mac OS-specific setup')
 
     if len(sys.argv) < 2:
         print('You must supply either a saved session textfile or the datapath, savepath, \
@@ -147,10 +114,6 @@ and csvfilename. See python main.py -h for more info.')
             window = Annotator(args.datapath, args.savepath, args.csvfile, args.savesession, args.min_dur)
 
         window.show()
-
         return_code = app.exec_()
-
-        # explicitly delete the main windows instead of waiting for the interpreter shutdown
-        # tentative to prevent errors on exit on macos
-        del window
+        del window  # prevent mac errors
         sys.exit(return_code)
