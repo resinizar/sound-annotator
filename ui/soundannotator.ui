@@ -215,12 +215,12 @@
   <customwidget>
    <class>SpecViewer</class>
    <extends>QLabel</extends>
-   <header>ui_support</header>
+   <header>spec_viewer</header>
   </customwidget>
   <customwidget>
    <class>CSVTable</class>
    <extends>QTableWidget</extends>
-   <header>ui_support</header>
+   <header>csv_table</header>
   </customwidget>
  </customwidgets>
  <resources/>
