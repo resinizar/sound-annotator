@@ -7,30 +7,31 @@ import logging
 import logging.handlers
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QApplication, QSplashScreen
-from PyQt5.QtGui import QPixmap, QSurfaceFormat
+from PyQt5.QtWidgets import QMainWindow, QHBoxLayout, QApplication, QSplashScreen, QSizePolicy, QVBoxLayout
+from PyQt5.QtGui import QPixmap, QSurfaceFormat, QImage, QPainter, QBrush, QPen
 import appdirs
+import numpy as np
+from playsound import playsound
+import shutil
+import csv
+from copy import deepcopy as cpy
 
 from ui import Ui_MainWindow
 
-# the display timer could be made faster when the processing
-# power allows it, firing down to every 10 ms
-FAST_TIMER_DUR = 10  # miliseconds
-
-# the slow timer is used for text refresh
-# Text has to be refreshed slowly in order to be readable.
-# (and text painting is costly)
-SLOW_TIMER_DUR = 1000  # miliseconds
 
 
 class SoundAnnotator(QMainWindow):
-    def __init__(self):
+    def __init__(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, d_ind=0):
         QMainWindow.__init__(self)
         self.logger = logging.getLogger(__name__)
 
         # set up UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        lay = QVBoxLayout(self.ui.scrollAreaWidgetContents)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self.ui.viewer)
+        self.ui.scrollArea.setWidgetResizable(True)
 
         # connect actions and buttons
         self.ui.play_button.clicked.connect(self.play)
@@ -41,35 +42,89 @@ class SoundAnnotator(QMainWindow):
         self.ui.action_save.triggered.connect(self.save)
         self.ui.action_next.triggered.connect(self.next_)
         self.ui.action_prev.triggered.connect(self.prev)
-        self.ui.action_open.triggered.connect(self.open)
+        # self.ui.action_open.triggered.connect(self.open)
 
-        # init backend audio stuff
+        # class vars
+        self.d_fp = d_fp
+        self.s_fp = s_fp
+        self.csv_fn = csv_fn
+        self.ss_fp = ss_fp
+        self.min_dur = min_dur
+        self.f_ind = f_ind
+        self.d_ind = d_ind
 
-        # display as fast as possible
-        self.display_timer = QtCore.QTimer()
-        self.display_timer.setInterval(FAST_TIMER_DUR)
+        # get all wav files contained in given directory or subdirectories
+        self.wav_files = []
+        for rootdir, dirs, filenames in os.walk(self.d_fp):
+            for filename in filenames:
+                if 'wav' in filename or 'WAV' in filename:
+                    self.wav_files.append(filename)
+            break  # activate this line if only top level of directory wanted
 
-        # slow timer
-        self.slow_timer = QtCore.QTimer()
-        self.slow_timer.setInterval(SLOW_TIMER_DUR)
+        # start by loading the first clip
+        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
 
-    def open(self):
-        logger.info('open')
+    def curr_filename(self):
+        return self.wav_files[self.f_ind]
+
+    def curr_save_filename(self):
+        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.d_ind)        
+
+    # def open(self):
+    #     logger.info('open')
 
     def play(self):
-        logger.info('play')
+        playsound('./support/temp.wav')  # TODO: do on a diff thread
 
     def save(self):
-        logger.info('save')
+        savepath = os.path.join(self.s_fp, self.curr_save_filename())
+        shutil.copy('./support/temp.wav', savepath)  # TODO: only do this if csv successful
+        logger.info('saved to {}'.format(savepath))
+
+        with open(os.path.join(self.s_fp, self.csv_fn), 'a') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([savepath, self.ui.tag.text()])  
+
+        self.d_ind += 1  
 
     def next_(self):
-        logger.info('next')
+        self.f_ind += 1
+        if self.f_ind >= len(self.wav_files):
+            pass  # TODO: exit program
+
+        # figure out what next d_ind should be  TODO: maybe look in csv instead?
+        highest = -1
+        for filename in os.listdir(self.s_fp):
+            if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
+                ind = int(filename.split('-')[-1].split('.')[0])
+                if ind > highest:
+                    highest = cpy(ind)
+
+        self.d_ind = highest + 1
+
+        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
+        logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def prev(self):
-        logger.info('prev')
+        self.f_ind -= 1
+        
+        # figure out what next d_ind should be
+        highest = -1
+        for filename in os.listdir(self.s_fp):
+            if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
+                ind = int(filename.split('-')[-1].split('.')[0])
+                if ind > highest:
+                    highest = cpy(ind)
+
+        self.d_ind = highest + 1
+
+        self.ui.viewer.new_clip(os.path.join(self.d_fp, self.curr_filename()))
+        logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def quit(self):
         logger.info('quit')
+
+
 
 def qt_message_handler(mode, context, message):
     logger = logging.getLogger(__name__)
@@ -172,13 +227,41 @@ if __name__ == '__main__':
     # splash.showMessage('Initializing the audio subsystem')
     # app.processEvents()
 
-    window = SoundAnnotator()
-    window.show()
-    # splash.finish(window)
+    if len(sys.argv) < 2:
+        print('You must supply either a saved session textfile or the datapath, savepath, \
+and csvfilename. See python main.py -h for more info.')
+    else:
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-d', dest='datapath', type=str, 
+            help='Full path to folder with audio clips.')
+        parser.add_argument('-s', dest='savepath', type=str,
+            help='Full path to existing folder where new clips will be saved.')
+        parser.add_argument('-f', dest='csvfile', type=str,
+            help='The full path and filename of the csvfile where data tags will be saved.')
+        parser.add_argument('-t', dest='savesession', default='./support/ss.txt', type=str,
+            help='The filepath of the saved session you want to save.')
+        parser.add_argument('-l', dest='loadsession', type=str,
+            help='The filepath of the saved session you want to load. This will be overwritten in next save.')
+        parser.add_argument('-m', dest='min_dur', default=1.0, type=float,
+            help='The minimum duration in seconds of a miniclip.')
+        args = parser.parse_args()
 
-    return_code = app.exec_()
+        if args.loadsession is not None:  # if provided with a session to load
+            with open(args.loadsession, 'r') as f:
+                data_folder, save_folder, csv_filename, min_dur, f_ind, d_ind = f.readline().strip().split(',')
+                window = SoundAnnotator(data_folder, save_folder, csv_filename, args.loadsession, 
+                    float(min_dur), int(f_ind), int(d_ind))
+        else:
+            if '.csv' not in args.csvfile:
+                raise Exception('must be a csvfile (got {})'.format(args.csvfile))
+            window = SoundAnnotator(args.datapath, args.savepath, args.csvfile, args.savesession, args.min_dur)
 
-    # explicitly delete the main windows instead of waiting for the interpreter shutdown
-    # tentative to prevent errors on exit on macos
-    del window
-    sys.exit(return_code)
+        window.show()
+
+        return_code = app.exec_()
+
+        # explicitly delete the main windows instead of waiting for the interpreter shutdown
+        # tentative to prevent errors on exit on macos
+        del window
+        sys.exit(return_code)
