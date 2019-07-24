@@ -21,7 +21,7 @@ class NewSession(QDialog):
         # connect buttons
         self.ui.dataFolderButton.clicked.connect(self.get_data_folder)
         self.ui.saveFolderButton.clicked.connect(self.get_save_folder)
-        ok_button.clicked.connect(self.open)
+        ok_button.clicked.connect(self.open_session)
 
         # vars set in dialog
         self.d_fp = None
@@ -39,8 +39,15 @@ class NewSession(QDialog):
         self.s_fp = folder
         self.logger.info('selected {} as save folder'.format(folder))
 
-    def open(self):
+    def open_session(self):
         self.logger.info('opening new session')
         csv_fn = self.ui.csvFileName.text()
         min_dur = float(self.ui.minDur.text())
+
+        if self.d_fp is None:
+            self.d_fp = self.ui.dataFolder.text()
+
+        if self.s_fp is None:
+            self.s_fp = self.ui.saveFolder.text()
+        
         self.annotator.load_clips(self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
