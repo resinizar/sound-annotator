@@ -14,6 +14,7 @@ from playsound import playsound
 from ui_annotator import Ui_MainWindow
 from new_session import NewSession
 from save_session import SaveSession
+import session
 
 
 
@@ -38,17 +39,17 @@ class Annotator(QMainWindow):
         self.ss_fp = None
         self.min_dur = None
         self.f_ind = None
-        self.d_ind = None
+        self.m_ind = None
         self.wav_files = None
 
-    def load_clips(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, d_ind=0):
+    def load_clips(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, m_ind=0):
         self.d_fp = d_fp
         self.s_fp = s_fp
         self.csv_fn = csv_fn
         self.ss_fp = ss_fp
         self.min_dur = min_dur
         self.f_ind = f_ind
-        self.d_ind = d_ind
+        self.m_ind = m_ind
 
         # get all wav files contained in given directory or subdirectories
         self.wav_files = []
@@ -97,7 +98,7 @@ class Annotator(QMainWindow):
         return self.wav_files[self.f_ind]
 
     def curr_save_filename(self):
-        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.d_ind)
+        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.m_ind)
 
     def new_session(self):
         self.logger.info('loading new session...')
@@ -106,10 +107,9 @@ class Annotator(QMainWindow):
 
     def load_session(self):
         self.logger.info('loading existing session...')
-        ss_fp, _ = QFileDialog.getOpenFileName(self, filter='Text files (*.txt)')
-        with open(ss_fp, 'r') as f:
-            d_fp, s_fp, csv_fn, min_dur, f_ind, d_ind = f.readline().strip().split(',')
-        self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(d_ind))
+        ss_fp, _ = QFileDialog.getOpenFileName(self, filter='(*.yaml)')
+        d_fp, s_fp, csv_fn, min_dur, f_ind, m_ind = session.load(ss_fp)
+        self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(m_ind))
         self.logger.info('loaded {}'.format(ss_fp))
 
     def quit_session(self):
@@ -131,14 +131,14 @@ class Annotator(QMainWindow):
 
         self.ui.table.add_row([savepath, self.ui.tag.text()])
 
-        self.d_ind += 1  
+        self.m_ind += 1  
 
     def next_(self):
         self.f_ind += 1
         if self.f_ind >= len(self.wav_files):
             pass  # TODO: exit program
 
-        # figure out what next d_ind should be  TODO: maybe look in csv instead?
+        # figure out what next m_ind should be  TODO: maybe look in csv instead?
         highest = -1
         for filename in os.listdir(self.s_fp):
             if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
@@ -146,7 +146,7 @@ class Annotator(QMainWindow):
                 if ind > highest:
                     highest = cpy(ind)
 
-        self.d_ind = highest + 1
+        self.m_ind = highest + 1
 
         self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         self.logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
@@ -154,7 +154,7 @@ class Annotator(QMainWindow):
     def prev(self):
         self.f_ind -= 1
         
-        # figure out what next d_ind should be
+        # figure out what next m_ind should be
         highest = -1
         for filename in os.listdir(self.s_fp):
             if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
@@ -162,7 +162,7 @@ class Annotator(QMainWindow):
                 if ind > highest:
                     highest = cpy(ind)
 
-        self.d_ind = highest + 1
+        self.m_ind = highest + 1
 
         self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
         self.logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))

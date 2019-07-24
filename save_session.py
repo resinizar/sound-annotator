@@ -5,6 +5,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox
 
 from ui_savesession import Ui_Dialog
+import session
 
 
 
@@ -26,17 +27,19 @@ class SaveSession(QDialog):
         
     def save_session(self):
         path, _ = QFileDialog.getSaveFileName(self)
+
         try:
-            with open(path, 'w') as f:
-                values = ','.join([self.annotator.d_fp, 
-                                    self.annotator.s_fp, 
-                                    self.annotator.csv_fn, 
-                                    str(self.annotator.min_dur),
-                                    str(self.annotator.f_ind), 
-                                    str(self.annotator.d_ind)])
-                print(values, file=f)
-            self.logger.info('saved session to {}'.format(path))
+            session.save(path,
+                self.annotator.d_fp, 
+                self.annotator.s_fp, 
+                self.annotator.csv_fn, 
+                str(self.annotator.min_dur),
+                str(self.annotator.f_ind), 
+                str(self.annotator.m_ind)
+            )
+            
             self.exit()
+            
         except FileNotFoundError:
             self.logger.info('unable to find: \'{}\''.format(path))
             self.open()
