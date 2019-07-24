@@ -1,14 +1,7 @@
-
-/ui.py
-
-/ui_annotator.py
-
-/test.png
-
-/temp/
-
-/__pycache__/
-
 /.DS_Store
 
 /env/
+
+/__pycache__/
+
+/temp/
