@@ -114,7 +114,7 @@ class Annotator(QMainWindow):
             d_fp, s_fp, csv_fn, min_dur, f_ind, m_ind = session.load(ss_fp)
             self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(m_ind))
             self.logger.info('loaded {}'.format(ss_fp))
-            
+
         except FileNotFoundError:
             self.logger.info('unable to find: \'{}\''.format(ss_fp))
 
@@ -144,9 +144,7 @@ class Annotator(QMainWindow):
         self.f_ind += 1
         if self.f_ind >= len(self.wav_files):
             msg = 'There are no more wav files.\nYou are done!'
-            def ok_fun():
-                self.exit()
-            alert = AlertOk(self, msg, ok_fun)
+            alert = AlertOk(self, msg, lambda _: self.exit()
             alert.show()
         else:
             # figure out what next m_ind should be  TODO: maybe look in csv instead?
@@ -164,16 +162,20 @@ class Annotator(QMainWindow):
 
     def prev(self):
         self.f_ind -= 1
-        
-        # figure out what next m_ind should be
-        highest = -1
-        for filename in os.listdir(self.s_fp):
-            if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
-                ind = int(filename.split('-')[-1].split('.')[0])
-                if ind > highest:
-                    highest = cpy(ind)
+        if self.f_ind < 0:
+            msg = 'This is the first file.'
+            alert = AlertOk(self, msg, lambda _: alert.done(os.EX_OK))
+            alert.show()
+        else:
+            # figure out what next m_ind should be
+            highest = -1
+            for filename in os.listdir(self.s_fp):
+                if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
+                    ind = int(filename.split('-')[-1].split('.')[0])
+                    if ind > highest:
+                        highest = cpy(ind)
 
-        self.m_ind = highest + 1
+            self.m_ind = highest + 1
 
-        self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
-        self.logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
+            self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
+            self.logger.info('displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
