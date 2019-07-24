@@ -144,7 +144,7 @@ class Annotator(QMainWindow):
         self.f_ind += 1
         if self.f_ind >= len(self.wav_files):
             msg = 'There are no more wav files.\nYou are done!'
-            alert = AlertOk(self, msg, lambda _: self.exit()
+            alert = AlertOk(self, msg, lambda _: self.exit())
             alert.show()
         else:
             # figure out what next m_ind should be  TODO: maybe look in csv instead?
