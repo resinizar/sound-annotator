@@ -13,6 +13,7 @@ from playsound import playsound
 
 from ui_annotator import Ui_MainWindow
 from new_session import NewSession
+from save_session import SaveSession
 
 
 
@@ -28,6 +29,7 @@ class Annotator(QMainWindow):
         # connect new and load 
         self.ui.actionNew.triggered.connect(self.new_session)
         self.ui.actionLoad.triggered.connect(self.load_session)
+        self.ui.actionExit.triggered.connect(self.quit_session)
 
         # class vars updated in load clips
         self.d_fp = None
@@ -98,15 +100,26 @@ class Annotator(QMainWindow):
         return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.d_ind)
 
     def new_session(self):
+        self.logger.info('loading new session...')
         dialog = NewSession(self)
         dialog.show()
 
     def load_session(self):
+        self.logger.info('loading existing session...')
         ss_fp, _ = QFileDialog.getOpenFileName(self, filter='Text files (*.txt)')
         with open(ss_fp, 'r') as f:
             d_fp, s_fp, csv_fn, min_dur, f_ind, d_ind = f.readline().strip().split(',')
         self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(d_ind))
         self.logger.info('loaded {}'.format(ss_fp))
+
+    def quit_session(self):
+        self.logger.info('quitting session...')
+        dialog = SaveSession(self)
+        dialog.show()
+
+    def exit(self):
+        self.logger.info('exiting main application...')
+        QApplication.quit()
 
     def play(self):
         playsound('./support/temp.wav')  # TODO: do on a diff thread

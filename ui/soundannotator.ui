@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>676</width>
-    <height>584</height>
+    <width>600</width>
+    <height>750</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>audio-event-annotator</string>
+   <string>annotator</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_4" stretch="8,1">
@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>650</width>
-         <height>328</height>
+         <width>574</width>
+         <height>494</height>
         </rect>
        </property>
        <widget class="SpecViewer" name="viewer">
@@ -40,6 +40,9 @@
         </property>
         <property name="text">
          <string/>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
         </property>
        </widget>
       </widget>
@@ -164,7 +167,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>676</width>
+     <width>600</width>
      <height>22</height>
     </rect>
    </property>
@@ -174,6 +177,7 @@
     </property>
     <addaction name="actionNew"/>
     <addaction name="actionLoad"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuActions">
     <property name="title">
@@ -248,6 +252,14 @@
     <string>Ctrl+L</string>
    </property>
   </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit Session</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+W</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -261,6 +273,15 @@
    <header>csv_table</header>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>scrollArea</tabstop>
+  <tabstop>tag</tabstop>
+  <tabstop>playButton</tabstop>
+  <tabstop>saveButton</tabstop>
+  <tabstop>nextButton</tabstop>
+  <tabstop>prevButton</tabstop>
+  <tabstop>table</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
