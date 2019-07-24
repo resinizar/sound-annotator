@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>600</width>
-    <height>750</height>
+    <height>760</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>574</width>
-         <height>494</height>
+         <height>504</height>
         </rect>
        </property>
        <widget class="SpecViewer" name="viewer">
