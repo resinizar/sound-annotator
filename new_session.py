@@ -1,8 +1,11 @@
 import logging
+import os
+from os import path
 
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox
+from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox, QLabel, QPushButton
 
+from ui_alert import AlertYayNay
 from ui_newsession import Ui_Dialog
 
 
@@ -49,5 +52,16 @@ class NewSession(QDialog):
 
         if self.s_fp is None:
             self.s_fp = self.ui.saveFolder.text()
-        
-        self.annotator.load_clips(self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
+
+        if path.exists(path.join(self.s_fp, csv_fn)):
+            msg = 'The data file {} already exists in {}.\nWould you like to proceed?'.format(
+                csv_fn, self.s_fp)
+            def yay_fun():
+                self.annotator.load_clips(
+                self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
+                alert.done(os.EX_OK)
+            alert = AlertYayNay(self, msg, yay_fun, lambda _: alert.done(os.EX_OK))
+            alert.show()
+
+        else:
+            self.annotator.load_clips(self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
