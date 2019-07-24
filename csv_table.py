@@ -15,6 +15,7 @@ class CSVTable(QTableWidget):
         self.itemChanged.connect(self.onItemChanged)
         
     def load_table(self, csv_fp):
+        self.logger.info('loading \'{}\''.format(csv_fp))
         self.csv_fp = csv_fp
         if not path.exists(csv_fp):
             with open(csv_fp, 'w') as csvfile:
@@ -45,7 +46,7 @@ class CSVTable(QTableWidget):
         self.logger.info('added row {} to table.'.format(row))
 
     def onItemChanged(self, item):
-        if item.row() <= self.num_rows:
+        if item.row() < self.num_rows:
             with open(self.csv_fp, 'r') as csvfile:
                 rows = list(csv.reader(csvfile))
                 old_val = rows[item.row()][item.column()]
