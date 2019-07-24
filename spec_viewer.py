@@ -15,7 +15,8 @@ class SpecViewer(QLabel):
         self.c2 = (0, 0)
         self.curr_clip = None
         self.min_dur = 1
-        self.h = 0
+        self.pen_weight = 1
+        self.h = self.pen_weight  # no height
 
     def mousePressEvent(self, e):
         self.logger.debug('mouse pressed at ({}, {})'.format(e.x(), e.y()))
@@ -38,17 +39,19 @@ class SpecViewer(QLabel):
         painter = QPainter(self)
         x, _ = self.c1
         w = self.c2[0] - self.c1[0]
-        painter.setPen(QPen(QColor(178, 217, 181), 1, QtCore.Qt.SolidLine))
+        painter.setPen(QPen(QColor(178, 217, 181), self.pen_weight, QtCore.Qt.SolidLine))
         painter.setBrush(QBrush(QColor(178, 217, 181), QtCore.Qt.Dense7Pattern))
-        painter.drawRect(x, 1, w, self.h-1)
+        painter.drawRect(x, self.pen_weight, w, self.h - self.pen_weight)
 
     def new_clip(self, fp):
-        # super(SpecViewer, self).paintEvent(e)
+        self.c1 = (0, 0)
+        self.c2 = (0, 0)
+        self.update()
         self.curr_clip = AudioClip(fp)
         viewable_spec = (self.curr_clip.spec * 255).astype('uint8')
         self.h, w = viewable_spec.shape
         pixMap = QPixmap.fromImage(QImage(viewable_spec, w, self.h, 
-            int(viewable_spec.nbytes/self.h), QImage.Format_Grayscale8))
+            int(viewable_spec.nbytes / self.h), QImage.Format_Grayscale8))
         self.setPixmap(pixMap)
 
     def save_selection(self):
