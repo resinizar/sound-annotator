@@ -26,7 +26,7 @@ class SaveSession(QDialog):
         nay_button.clicked.connect(self.exit)
         
     def save_session(self):
-        path, _ = QFileDialog.getSaveFileName(self)
+        path, _ = QFileDialog.getSaveFileName(self, filter='(*.yaml)')
 
         try:
             session.save(path,
