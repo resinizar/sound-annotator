@@ -57,4 +57,4 @@ class SpecViewer(QLabel):
     def save_selection(self):
         start = min(self.c1[0], self.c2[0])
         end = max(self.c1[0], self.c2[0])
-        self.curr_clip.write_mini_clip('./support/temp.wav', start, end, self.min_dur)
+        self.curr_clip.write_mini_clip('./temp.wav', start, end, self.min_dur)

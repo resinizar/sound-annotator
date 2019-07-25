@@ -129,11 +129,11 @@ class Annotator(QMainWindow):
 
     def play(self):
         self.logger.info('playing selection...')
-        playsound('./support/temp.wav')  # TODO: do on a diff thread
+        playsound('./temp.wav')  # TODO: do on a diff thread
 
     def save(self):
         savepath = path.join(self.s_fp, self.curr_save_filename())
-        shutil.copy('./support/temp.wav', savepath)  # TODO: only do this if csv successful
+        shutil.copy('./temp.wav', savepath)  # TODO: only do this if csv successful
         self.status(self.logger, 'saved audio file as {}'.format(savepath), 2000)
         self.ui.table.add_row([savepath, self.ui.tag.text()])
         self.m_ind += 1  
