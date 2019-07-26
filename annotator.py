@@ -5,6 +5,7 @@ import shutil
 import csv
 from copy import deepcopy as cpy
 from threading import Thread
+import time
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QMainWindow, QApplication, QVBoxLayout
@@ -20,6 +21,9 @@ import session
 
 
 class Annotator(QMainWindow):
+
+    saved_signal = QtCore.pyqtSignal()
+
     def __init__(self):
         QMainWindow.__init__(self)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -28,6 +32,7 @@ class Annotator(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.viewer.clip_loaded_signal.connect(self.clip_loaded)
+        self.saved_signal.connect(self.save_to_csv)
 
         # connect new and load 
         self.ui.actionNew.triggered.connect(self.new_session)
@@ -74,7 +79,7 @@ class Annotator(QMainWindow):
             self.ui.nextButton.setEnabled(True)
             self.ui.prevButton.setEnabled(True)
             self.ui.playButton.clicked.connect(self.play)
-            self.ui.saveButton.clicked.connect(self.save)
+            self.ui.saveButton.clicked.connect(self.save_audio_file)
             self.ui.nextButton.clicked.connect(self.next_)
             self.ui.prevButton.clicked.connect(self.prev)
 
@@ -84,7 +89,7 @@ class Annotator(QMainWindow):
             self.ui.actionNext.setEnabled(True)
             self.ui.actionPrev.setEnabled(True)
             self.ui.actionPlay.triggered.connect(self.play)
-            self.ui.actionSave.triggered.connect(self.save)
+            self.ui.actionSave.triggered.connect(self.save_audio_file)
             self.ui.actionNext.triggered.connect(self.next_)
             self.ui.actionPrev.triggered.connect(self.prev)
 
@@ -102,6 +107,15 @@ class Annotator(QMainWindow):
 
     def curr_save_filename(self):
         return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.m_ind)
+
+    def curr_display_msg(self):
+        return 'displaying clip #{} ({}) recorded at {} {} on {}'.format(
+            self.f_ind, 
+            self.curr_filename(), 
+            self.ui.viewer.curr_clip.metadata['time'], 
+            self.ui.viewer.curr_clip.metadata['timezone'], 
+            self.ui.viewer.curr_clip.metadata['date']
+            )
 
     def new_session(self):
         self.status(self.logger, 'loading new session...')
@@ -145,15 +159,39 @@ class Annotator(QMainWindow):
 
     def play(self):
         self.status(self.logger, 'playing selection...')
-        Thread(target=playsound, args=['./temp.wav']).start()
 
-    def save(self):
-        self.status(self.logger, 'saving selection...')
+        def thread_play():
+            playsound('./temp.wav')
+            self.ui.statusbar.showMessage(self.curr_display_msg())
+
+        Thread(target=thread_play).start()
+
+    def save_audio_file(self):
         savepath = path.join(self.s_fp, self.curr_save_filename())
-        shutil.copy('./temp.wav', savepath)  # TODO: only do this if csv successful
-        self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
+        self.status(self.logger, 'saving selection to {}...'.format(savepath))
+
+        def thread_save():
+            try:
+                shutil.copy('./temp.wav', savepath)
+                self.saved_signal.emit()
+                
+            except IOError as err:
+                self.logger.error(err)
+                self.ui.statusbar.showMessage('Error: unable to save file!')
+
+        Thread(target=thread_save).start()
+
+    def save_to_csv(self):
+        savepath = path.join(self.s_fp, self.curr_save_filename())
         self.ui.table.add_row([savepath, self.ui.tag.text()])
-        self.m_ind += 1  
+        self.m_ind += 1
+
+        def save_msg():
+            self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
+            time.sleep(1)
+            self.ui.statusbar.showMessage(self.curr_display_msg())
+
+        Thread(target=save_msg).start()
 
     def next_(self):
         self.status(self.logger, 'getting next clip...')
@@ -195,12 +233,8 @@ class Annotator(QMainWindow):
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
 
     def clip_loaded(self, logger):
-        msg = 'displaying clip #{} ({}) recorded at {} {} on {}'.format(self.f_ind, self.curr_filename(), 
-            self.ui.viewer.curr_clip.metadata['time'], self.ui.viewer.curr_clip.metadata['timezone'], 
-            self.ui.viewer.curr_clip.metadata['date'])
-        logger.info(msg)
-        self.ui.statusbar.showMessage(msg)
-
+        logger.info(self.curr_display_msg())
+        self.ui.statusbar.showMessage(self.curr_display_msg())
 
     def status(self, logger, message, timeout=0):
         logger.info(message)
