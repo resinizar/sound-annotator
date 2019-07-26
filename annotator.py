@@ -22,7 +22,9 @@ import session
 
 class Annotator(QMainWindow):
 
-    saved_signal = QtCore.pyqtSignal()
+    # signals (must be defined here)
+    saved_audio_file = QtCore.pyqtSignal()
+    now_show_info = QtCore.pyqtSignal()
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -32,7 +34,10 @@ class Annotator(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.viewer.clip_loaded_signal.connect(self.clip_loaded)
-        self.saved_signal.connect(self.save_to_csv)
+
+        # connect signals (all used to make threads & updates possible)
+        self.saved_audio_file.connect(self.save_to_csv)
+        self.now_show_info.connect(self.show_file_info)
 
         # connect new and load 
         self.ui.actionNew.triggered.connect(self.new_session)
@@ -79,7 +84,7 @@ class Annotator(QMainWindow):
             self.ui.nextButton.setEnabled(True)
             self.ui.prevButton.setEnabled(True)
             self.ui.playButton.clicked.connect(self.play)
-            self.ui.saveButton.clicked.connect(self.save_audio_file)
+            self.ui.saveButton.clicked.connect(self.check_tag)
             self.ui.nextButton.clicked.connect(self.next_)
             self.ui.prevButton.clicked.connect(self.prev)
 
@@ -89,7 +94,7 @@ class Annotator(QMainWindow):
             self.ui.actionNext.setEnabled(True)
             self.ui.actionPrev.setEnabled(True)
             self.ui.actionPlay.triggered.connect(self.play)
-            self.ui.actionSave.triggered.connect(self.save_audio_file)
+            self.ui.actionSave.triggered.connect(self.check_tag)
             self.ui.actionNext.triggered.connect(self.next_)
             self.ui.actionPrev.triggered.connect(self.prev)
 
@@ -166,6 +171,26 @@ class Annotator(QMainWindow):
 
         Thread(target=thread_play).start()
 
+    def check_tag(self):
+        tag = self.ui.tag.text()
+
+        if tag == '':
+            msg = 'This audio selection has no label. Proceed?'
+            def yes_fun():
+                self.save_audio_file()
+                alert.done(os.EX_OK)
+            def no_fun():
+                self.status(self.logger, 'save selection canceled')
+                def delay():
+                    time.sleep(1)
+                    self.now_show_info.emit() 
+                Thread(target=delay).start() 
+                alert.done(os.EX_OK)
+            alert = AlertYayNay(self, msg, yes_fun , no_fun)
+            alert.show()
+        else:
+            self.save_audio_file()
+
     def save_audio_file(self):
         savepath = path.join(self.s_fp, self.curr_save_filename())
         self.status(self.logger, 'saving selection to {}...'.format(savepath))
@@ -173,7 +198,7 @@ class Annotator(QMainWindow):
         def thread_save():
             try:
                 shutil.copy('./temp.wav', savepath)
-                self.saved_signal.emit()
+                self.saved_audio_file.emit()
                 
             except IOError as err:
                 self.logger.error(err)
@@ -185,13 +210,13 @@ class Annotator(QMainWindow):
         savepath = path.join(self.s_fp, self.curr_save_filename())
         self.ui.table.add_row([savepath, self.ui.tag.text()])
         self.m_ind += 1
+        savepath = path.join(self.s_fp, self.curr_save_filename())
+        self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
 
-        def save_msg():
-            self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
+        def delay():
             time.sleep(1)
-            self.ui.statusbar.showMessage(self.curr_display_msg())
-
-        Thread(target=save_msg).start()
+            self.now_show_info.emit() 
+        Thread(target=delay).start()    
 
     def next_(self):
         self.status(self.logger, 'getting next clip...')
@@ -231,6 +256,9 @@ class Annotator(QMainWindow):
             self.m_ind = highest + 1
 
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
+
+    def show_file_info(self):
+        self.ui.statusbar.showMessage(self.curr_display_msg())
 
     def clip_loaded(self, logger):
         logger.info(self.curr_display_msg())
