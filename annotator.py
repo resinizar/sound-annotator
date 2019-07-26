@@ -11,11 +11,10 @@ import appdirs
 import numpy as np
 from playsound import playsound
 
-from ui_annotator import Ui_MainWindow
+from ui_annotator import Ui_MainWindow  # Annotator's generated ui file
 from new_session import NewSession
-from save_session import SaveSession
+from ui_alert import AlertOk, AlertYayNay
 import session
-from ui_alert import AlertOk
 
 
 
@@ -44,6 +43,7 @@ class Annotator(QMainWindow):
         self.wav_files = None
 
     def load_clips(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, m_ind=0):
+        self.status(self.logger, 'setting up session...')
         self.d_fp = d_fp
         self.s_fp = s_fp
         self.csv_fn = csv_fn
@@ -120,8 +120,23 @@ class Annotator(QMainWindow):
 
     def quit_session(self):
         self.status(self.logger, 'quitting session...')
-        dialog = SaveSession(self)
-        dialog.show()
+
+        msg = 'Would you like to save your current session as a .yaml file?'
+
+        def yes_fun():
+            path, _ = QFileDialog.getSaveFileName(self, filter='(*.yaml)')
+
+            try:
+                session.save(path, self.d_fp, self.s_fp, self.csv_fn, 
+                    str(self.min_dur), str(self.f_ind), str(self.m_ind)
+                )
+                self.exit()
+                
+            except FileNotFoundError:
+                self.annotator.status('unable to find: \'{}\''.format(path))
+                self.open()
+
+        AlertYayNay(self, msg, yes_fun, lambda _: self.exit()).show()
 
     def exit(self):
         self.status(self.logger, 'exiting main application...')
@@ -132,18 +147,19 @@ class Annotator(QMainWindow):
         playsound('./temp.wav')  # TODO: do on a diff thread
 
     def save(self):
+        self.status(self.logger, 'saving selection...')
         savepath = path.join(self.s_fp, self.curr_save_filename())
         shutil.copy('./temp.wav', savepath)  # TODO: only do this if csv successful
-        self.status(self.logger, 'saved audio file as {}'.format(savepath), 2000)
+        self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
         self.ui.table.add_row([savepath, self.ui.tag.text()])
         self.m_ind += 1  
 
     def next_(self):
+        self.status(self.logger, 'getting next clip...')
         self.f_ind += 1
         if self.f_ind >= len(self.wav_files):
             msg = 'There are no more wav files.\nYou are done!'
-            alert = AlertOk(self, msg, lambda _: self.exit())
-            alert.show()
+            AlertOk(self, msg, lambda _: self.exit()).show()
         else:
             # figure out what next m_ind should be  TODO: maybe look in csv instead?
             highest = -1
@@ -156,9 +172,9 @@ class Annotator(QMainWindow):
             self.m_ind = highest + 1
 
             self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
-            self.status(self.logger, 'displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def prev(self):
+        self.status(self.logger, 'getting previous clip...')
         self.f_ind -= 1
         if self.f_ind < 0:
             msg = 'This is the first file.'
@@ -176,7 +192,6 @@ class Annotator(QMainWindow):
             self.m_ind = highest + 1
 
             self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
-            self.status(self.logger, 'displaying file #{} ({})'.format(self.f_ind, self.curr_filename()))
 
     def status(self, logger, message, timeout=0):
         logger.info(message)
