@@ -9,6 +9,7 @@ import csv
 class CSVTable(QTableWidget):
     def __init__(self, parent):
         super().__init__(parent=parent)
+        self.annotator = parent
         self.logger = logging.getLogger(self.__class__.__name__)
         self.csv_fp = None  # set when table is loaded
         self.num_rows = -1  # so onItemChanged doesn't do unecessary work
@@ -54,6 +55,7 @@ class CSVTable(QTableWidget):
             with open(self.csv_fp, 'w') as csvfile:
                 w = csv.writer(csvfile)
                 w.writerows(rows)
-            self.logger.info('changed {} to {}'.format(old_val, item.text()))
+            self.annotator.status(self.logger, 
+                'changed {} to {} in csv file'.format(old_val, item.text()), 3000)
 
 

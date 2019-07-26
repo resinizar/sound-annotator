@@ -5,8 +5,8 @@ from os import path
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox, QLabel, QPushButton
 
+from ui_newsession import Ui_Dialog  # NewSession's generated ui file
 from ui_alert import AlertYayNay
-from ui_newsession import Ui_Dialog
 
 
 
@@ -43,7 +43,7 @@ class NewSession(QDialog):
         self.logger.info('selected {} as save folder'.format(folder))
 
     def open_session(self):
-        self.logger.info('opening new session')
+        self.annotator.status(self.logger, 'opening new session...')
         csv_fn = self.ui.csvFileName.text()
         min_dur = float(self.ui.minDur.text())
 

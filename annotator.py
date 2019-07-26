@@ -4,6 +4,7 @@ import logging
 import shutil
 import csv
 from copy import deepcopy as cpy
+from threading import Thread
 
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QMainWindow, QApplication, QVBoxLayout
@@ -26,6 +27,7 @@ class Annotator(QMainWindow):
         # set up UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.viewer.clip_loaded_signal.connect(self.clip_loaded)
 
         # connect new and load 
         self.ui.actionNew.triggered.connect(self.new_session)
@@ -61,7 +63,7 @@ class Annotator(QMainWindow):
             break  # activate this line if only top level of directory wanted
 
         if not self.wav_files:
-            self.status(self.logger, 'No wav files found in {}'.format(self.d_fp))
+            self.status(self.logger, 'No wav files found in {}'.format(self.d_fp), 3000)
         else:
             # set up the csv table
             self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
@@ -113,10 +115,9 @@ class Annotator(QMainWindow):
         try:
             d_fp, s_fp, csv_fn, min_dur, f_ind, m_ind = session.load(ss_fp)
             self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(m_ind))
-            self.status(self.logger, 'loaded {}'.format(ss_fp))
 
         except FileNotFoundError:
-            self.status(self.logger, 'unable to find: \'{}\''.format(ss_fp))
+            self.status(self.logger, 'unable to find: \'{}\''.format(ss_fp), 3000)
 
     def quit_session(self):
         self.status(self.logger, 'quitting session...')
@@ -133,7 +134,7 @@ class Annotator(QMainWindow):
                 self.exit()
                 
             except FileNotFoundError:
-                self.annotator.status('unable to find: \'{}\''.format(path))
+                self.annotator.status('unable to find: \'{}\''.format(path), 3000)
                 self.open()
 
         AlertYayNay(self, msg, yes_fun, lambda _: self.exit()).show()
@@ -143,8 +144,8 @@ class Annotator(QMainWindow):
         QApplication.quit()
 
     def play(self):
-        self.logger.info('playing selection...')
-        playsound('./temp.wav')  # TODO: do on a diff thread
+        self.status(self.logger, 'playing selection...')
+        Thread(target=playsound, args=['./temp.wav']).start()
 
     def save(self):
         self.status(self.logger, 'saving selection...')
@@ -171,7 +172,7 @@ class Annotator(QMainWindow):
 
             self.m_ind = highest + 1
 
-            self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
+            Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
 
     def prev(self):
         self.status(self.logger, 'getting previous clip...')
@@ -191,7 +192,15 @@ class Annotator(QMainWindow):
 
             self.m_ind = highest + 1
 
-            self.ui.viewer.new_clip(path.join(self.d_fp, self.curr_filename()))
+            Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
+
+    def clip_loaded(self, logger):
+        msg = 'displaying clip #{} ({}) recorded at {} {} on {}'.format(self.f_ind, self.curr_filename(), 
+            self.ui.viewer.curr_clip.metadata['time'], self.ui.viewer.curr_clip.metadata['timezone'], 
+            self.ui.viewer.curr_clip.metadata['date'])
+        logger.info(msg)
+        self.ui.statusbar.showMessage(msg)
+
 
     def status(self, logger, message, timeout=0):
         logger.info(message)

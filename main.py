@@ -45,15 +45,15 @@ if __name__ == '__main__':
 
     # log to file
     file_handler = logging.handlers.RotatingFileHandler(log_fp, maxBytes=100000, backupCount=5)
-    file_handler.setLevel(logging.DEBUG)
+    file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
 
     rootLogger = logging.getLogger()
-    rootLogger.setLevel(logging.DEBUG)
+    rootLogger.setLevel(logging.INFO)
     rootLogger.addHandler(file_handler)
 
     console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
+    console.setLevel(logging.INFO)
     console.setFormatter(formatter)
     rootLogger.addHandler(console)
 
