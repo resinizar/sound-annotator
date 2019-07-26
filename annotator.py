@@ -33,9 +33,10 @@ class Annotator(QMainWindow):
         # set up UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.viewer.clip_loaded_signal.connect(self.clip_loaded)
 
         # connect signals (all used to make threads & updates possible)
+        self.ui.viewer.show_new_file_info.connect(self.show_new_file_info)
+        self.ui.table.show_msg.connect(self.show_timed_msg)
         self.saved_audio_file.connect(self.save_to_csv)
         self.now_show_info.connect(self.show_file_info)
 
@@ -73,7 +74,7 @@ class Annotator(QMainWindow):
             break  # activate this line if only top level of directory wanted
 
         if not self.wav_files:
-            self.status(self.logger, 'No wav files found in {}'.format(self.d_fp), 3000)
+            self.status(self.logger, 'No wav files found in {}'.format(self.d_fp))
         else:
             # set up the csv table
             self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
@@ -136,7 +137,7 @@ class Annotator(QMainWindow):
             self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(m_ind))
 
         except FileNotFoundError:
-            self.status(self.logger, 'unable to find: \'{}\''.format(ss_fp), 3000)
+            self.status(self.logger, 'unable to find: \'{}\''.format(ss_fp))
 
     def quit_session(self):
         self.status(self.logger, 'quitting session...')
@@ -153,7 +154,7 @@ class Annotator(QMainWindow):
                 self.exit()
                 
             except FileNotFoundError:
-                self.annotator.status('unable to find: \'{}\''.format(path), 3000)
+                self.annotator.status('unable to find: \'{}\''.format(path))
                 self.open()
 
         AlertYayNay(self, msg, yes_fun, lambda _: self.exit()).show()
@@ -167,7 +168,7 @@ class Annotator(QMainWindow):
 
         def thread_play():
             playsound('./temp.wav')
-            self.ui.statusbar.showMessage(self.curr_display_msg())
+            self.now_show_info.emit()
 
         Thread(target=thread_play).start()
 
@@ -211,12 +212,8 @@ class Annotator(QMainWindow):
         self.ui.table.add_row([savepath, self.ui.tag.text()])
         self.m_ind += 1
         savepath = path.join(self.s_fp, self.curr_save_filename())
-        self.status(self.logger, 'saved new audio file as {}'.format(savepath), 2000)
-
-        def delay():
-            time.sleep(1)
-            self.now_show_info.emit() 
-        Thread(target=delay).start()    
+        msg = 'saved new audio file as {}'.format(savepath)
+        self.show_timed_msg(self.logger, msg) 
 
     def next_(self):
         self.status(self.logger, 'getting next clip...')
@@ -257,13 +254,20 @@ class Annotator(QMainWindow):
 
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
 
+    def show_timed_msg(self, logger, msg):
+        self.status(logger, msg)
+        def delay():
+            time.sleep(1.5)
+            self.now_show_info.emit() 
+        Thread(target=delay).start()  
+
     def show_file_info(self):
         self.ui.statusbar.showMessage(self.curr_display_msg())
 
-    def clip_loaded(self, logger):
+    def show_new_file_info(self, logger):
         logger.info(self.curr_display_msg())
         self.ui.statusbar.showMessage(self.curr_display_msg())
 
-    def status(self, logger, message, timeout=0):
-        logger.info(message)
-        self.ui.statusbar.showMessage(message, timeout)
+    def status(self, logger, msg):
+        logger.info(msg)
+        self.ui.statusbar.showMessage(msg)

@@ -9,7 +9,8 @@ from audio_clip import AudioClip
 
 class SpecViewer(QLabel):
 
-    clip_loaded_signal = QtCore.pyqtSignal(logging.Logger)
+    show_new_file_info = QtCore.pyqtSignal(logging.Logger)
+    
     def __init__(self, parent):
         super().__init__(parent=parent)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -54,8 +55,7 @@ class SpecViewer(QLabel):
         self.h, w = viewable_spec.shape
         self.setPixmap(QPixmap.fromImage(QImage(viewable_spec, w, self.h, 
             int(viewable_spec.nbytes / self.h), QImage.Format_Grayscale8)))
-        self.clip_loaded_signal.emit(self.logger)
-
+        self.show_new_file_info.emit(self.logger)
 
     def save_selection(self):
         start = min(self.c1[0], self.c2[0])
