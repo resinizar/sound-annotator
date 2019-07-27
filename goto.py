@@ -24,6 +24,12 @@ class GoTo(QDialog):
         # connect buttons
         ok_button.clicked.connect(self.goto_file)
         cancel_button.clicked.connect(lambda _: self.done(os.EX_OK))
+        self.ui.chooseButton.clicked.connect(self.get_filename)
+
+    def get_filename(self):
+        fp, _ = QFileDialog.getOpenFileName(self, filter='(*.wav)')
+        _, fn = path.split(fp)
+        self.ui.filename.setText(fn)
 
     def goto_file(self):
         filename = self.ui.filename.text()
