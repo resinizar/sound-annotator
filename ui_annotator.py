@@ -111,6 +111,9 @@ class Ui_MainWindow(object):
         self.actionLoad.setObjectName("actionLoad")
         self.actionExit = QtWidgets.QAction(MainWindow)
         self.actionExit.setObjectName("actionExit")
+        self.actionGoto = QtWidgets.QAction(MainWindow)
+        self.actionGoto.setEnabled(False)
+        self.actionGoto.setObjectName("actionGoto")
         self.menuFile.addAction(self.actionNew)
         self.menuFile.addAction(self.actionLoad)
         self.menuFile.addAction(self.actionExit)
@@ -118,6 +121,7 @@ class Ui_MainWindow(object):
         self.menuActions.addAction(self.actionSave)
         self.menuActions.addAction(self.actionNext)
         self.menuActions.addAction(self.actionPrev)
+        self.menuActions.addAction(self.actionGoto)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuActions.menuAction())
 
@@ -154,5 +158,7 @@ class Ui_MainWindow(object):
         self.actionLoad.setShortcut(_translate("MainWindow", "Ctrl+L"))
         self.actionExit.setText(_translate("MainWindow", "Exit Session"))
         self.actionExit.setShortcut(_translate("MainWindow", "Ctrl+W"))
+        self.actionGoto.setText(_translate("MainWindow", "Go to"))
+        self.actionGoto.setShortcut(_translate("MainWindow", "Ctrl+G"))
 from csv_table import CSVTable
 from spec_viewer import SpecViewer

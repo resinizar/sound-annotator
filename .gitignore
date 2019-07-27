@@ -9,3 +9,5 @@
 *.yaml
 
 /temp.wav
+
+/ui/.DS_Store

@@ -17,6 +17,7 @@ from ui_annotator import Ui_MainWindow  # Annotator's generated ui file
 from new_session import NewSession
 from ui_alert import AlertOk, AlertYayNay
 import session
+from goto import GoTo
 
 
 
@@ -94,10 +95,12 @@ class Annotator(QMainWindow):
             self.ui.actionSave.setEnabled(True)
             self.ui.actionNext.setEnabled(True)
             self.ui.actionPrev.setEnabled(True)
+            self.ui.actionGoto.setEnabled(True)
             self.ui.actionPlay.triggered.connect(self.play)
             self.ui.actionSave.triggered.connect(self.check_tag)
             self.ui.actionNext.triggered.connect(self.next_)
             self.ui.actionPrev.triggered.connect(self.prev)
+            self.ui.actionGoto.triggered.connect(self.goto)
 
             # this is so the spectrum viewer works properly
             lay = QVBoxLayout(self.ui.scrollAreaWidgetContents)
@@ -125,8 +128,7 @@ class Annotator(QMainWindow):
 
     def new_session(self):
         self.status(self.logger, 'loading new session...')
-        dialog = NewSession(self)
-        dialog.show()
+        NewSession(self).show()
 
     def load_session(self):
         self.status(self.logger, 'loading existing session...')
@@ -253,6 +255,10 @@ class Annotator(QMainWindow):
             self.m_ind = highest + 1
 
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
+
+    def goto(self):
+        self.status(self.logger, 'going to...')
+        GoTo(self).show()
 
     def show_timed_msg(self, logger, msg):
         self.status(logger, msg)

@@ -187,6 +187,7 @@
     <addaction name="actionSave"/>
     <addaction name="actionNext"/>
     <addaction name="actionPrev"/>
+    <addaction name="actionGoto"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuActions"/>
@@ -258,6 +259,17 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+W</string>
+   </property>
+  </action>
+  <action name="actionGoto">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Go to</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+G</string>
    </property>
   </action>
  </widget>
