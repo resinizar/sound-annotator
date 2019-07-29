@@ -9,7 +9,7 @@ class AudioClip:
     def __init__(self, fp, frame_len=1024):
         self.fp = fp
         self.metadata = self.parse_comment(fp)
-        self.clip, self.sr = librosa.load(fp)
+        self.clip, self.sr = librosa.load(fp, sr=None)
 
         # creates spectrogram
         stft_clip = librosa.stft(self.clip, n_fft=frame_len, hop_length=frame_len//2+1)
@@ -54,7 +54,7 @@ class AudioClip:
             'battery': battery_level
         }
 
-    def write_mini_clip(self, fp, start_spec, end_spec, min_dur=None):
+    def write_mini_clip(self, fp, start_spec, end_spec):
         """
         fp - string - the full filepath to save the clip
         start_ind - int - the desired starting place in spec
@@ -65,10 +65,4 @@ class AudioClip:
         start = int(start_spec * len(self.clip) / spec_w)
         end   = int(end_spec   * len(self.clip) / spec_w)
 
-        dur = (end - start) / self.sr
-        if min_dur and dur < min_dur:
-            pad_len = ceil((min_dur - dur) / 2 * self.sr)
-            mini = self.clip[start - pad_len:end + pad_len]
-        else:
-            mini = self.clip[start:end]
-        librosa.output.write_wav(fp, mini, self.sr)
+        librosa.output.write_wav(fp, self.clip[start:end], self.sr)

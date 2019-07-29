@@ -66,6 +66,8 @@ class Annotator(QMainWindow):
         self.f_ind = f_ind
         self.m_ind = m_ind
 
+        self.ui.viewer.min_dur = min_dur
+
         # get all wav files contained in given directory or subdirectories
         self.wav_files = []
         for rootdir, dirs, filenames in os.walk(self.d_fp):
@@ -220,6 +222,10 @@ class Annotator(QMainWindow):
     def next_(self):
         self.status(self.logger, 'getting next clip...')
         self.f_ind += 1
+
+        if path.exists('temp.wav'):
+            os.remove('temp.wav')
+
         if self.f_ind >= len(self.wav_files):
             msg = 'There are no more wav files.\nYou are done!'
             AlertOk(self, msg, lambda _: self.exit()).show()

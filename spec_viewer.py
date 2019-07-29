@@ -2,6 +2,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QLabel
 from PyQt5.QtGui import QPainter, QBrush, QPen, QImage, QPixmap, QColor
 import logging
+from math import ceil
 
 from audio_clip import AudioClip
 
@@ -17,9 +18,9 @@ class SpecViewer(QLabel):
         self.c1 = (0, 0)
         self.c2 = (0, 0)
         self.curr_clip = None
-        self.min_dur = 1
+        self.min_dur = None
         self.pen_weight = 1
-        self.h = self.pen_weight  # no height
+        self.h = self.pen_weight 
 
     def mousePressEvent(self, e):
         self.logger.debug('mouse pressed at ({}, {})'.format(e.x(), e.y()))
@@ -58,6 +59,20 @@ class SpecViewer(QLabel):
         self.show_new_file_info.emit(self.logger)
 
     def save_selection(self):
-        start = min(self.c1[0], self.c2[0])
-        end = max(self.c1[0], self.c2[0])
-        self.curr_clip.write_mini_clip('./temp.wav', start, end, self.min_dur)
+        start_spec = min(self.c1[0], self.c2[0])  # get start and end in spectrogram space
+        end_spec = max(self.c1[0], self.c2[0])
+
+        _, spec_w = self.curr_clip.spec.shape  # get min dur in spec space
+        min_dur_spec = self.min_dur * self.curr_clip.sr * spec_w / len(self.curr_clip.clip)
+
+        dur_spec = end_spec - start_spec
+        if dur_spec < min_dur_spec:
+            pad_len = ceil((min_dur_spec - dur_spec) / 2)
+            start_spec = max(start_spec - pad_len, 0)
+            end_spec = min(end_spec + pad_len, spec_w)
+
+            self.c1 = (start_spec, self.c1[1])
+            self.c2 = (end_spec, self.c2[1])
+            self.update()
+
+        self.curr_clip.write_mini_clip('./temp.wav', start_spec, end_spec)
