@@ -5,7 +5,7 @@ from os import path
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox, QLabel, QPushButton
 
-from ui_goto import Ui_Dialog  # NewSession's generated ui file
+from ui_goto import Ui_Dialog  # Goto's generated ui file
 
 
 
@@ -27,7 +27,7 @@ class GoTo(QDialog):
         self.ui.chooseButton.clicked.connect(self.get_filename)
 
     def get_filename(self):
-        fp, _ = QFileDialog.getOpenFileName(self, filter='(*.wav)')
+        fp, _ = QFileDialog.getOpenFileName(self, directory=self.annotator.d_fp, filter='(*.wav)')
         _, fn = path.split(fp)
         self.ui.filename.setText(fn)
 

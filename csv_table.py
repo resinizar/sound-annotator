@@ -23,7 +23,7 @@ class CSVTable(QTableWidget):
         if not path.exists(csv_fp):
             with open(csv_fp, 'w') as csvfile:
                 w = csv.writer(csvfile)
-                w.writerow(['fp', 'tag'])
+                w.writerow(['fp', 'tag', 'start', 'end', 'sr'])
 
         with open(csv_fp, 'r') as csvfile:
             rows = list(csv.reader(csvfile))
@@ -43,8 +43,8 @@ class CSVTable(QTableWidget):
 
         pos = self.rowCount()
         self.insertRow(pos)
-        self.setItem(pos, 0, QTableWidgetItem(row[0]))
-        self.setItem(pos, 1, QTableWidgetItem(row[1]))
+        for i in range(len(row)):
+            self.setItem(pos, i, QTableWidgetItem(str(row[i])))
         self.num_rows += 1
         self.logger.info('added row {} to table.'.format(row))
 

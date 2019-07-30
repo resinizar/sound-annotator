@@ -22,6 +22,15 @@ class SpecViewer(QLabel):
         self.pen_weight = 1
         self.h = self.pen_weight 
 
+    def get_curr_selection(self):
+        start_spec = min(self.c1[0], self.c2[0])  # get start and end in spectrogram space
+        end_spec = max(self.c1[0], self.c2[0])
+
+        _, spec_w = self.curr_clip.spec.shape
+        start = int(start_spec * len(self.curr_clip.data) / spec_w)
+        end   = int(end_spec   * len(self.curr_clip.data) / spec_w)
+        return start, end
+
     def mousePressEvent(self, e):
         self.logger.debug('mouse pressed at ({}, {})'.format(e.x(), e.y()))
         self.c1 = e.x(), e.y()
@@ -63,7 +72,7 @@ class SpecViewer(QLabel):
         end_spec = max(self.c1[0], self.c2[0])
 
         _, spec_w = self.curr_clip.spec.shape  # get min dur in spec space
-        min_dur_spec = self.min_dur * self.curr_clip.sr * spec_w / len(self.curr_clip.clip)
+        min_dur_spec = self.min_dur * self.curr_clip.sr * spec_w / len(self.curr_clip.data)
 
         dur_spec = end_spec - start_spec
         if dur_spec < min_dur_spec:
@@ -75,4 +84,4 @@ class SpecViewer(QLabel):
             self.c2 = (end_spec, self.c2[1])
             self.update()
 
-        self.curr_clip.write_mini_clip('./temp.wav', start_spec, end_spec)
+        self.curr_clip.write_mini_clip(start_spec, end_spec)

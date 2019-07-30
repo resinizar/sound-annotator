@@ -11,7 +11,7 @@ from PyQt5 import QtCore
 from PyQt5.QtWidgets import QFileDialog, QMainWindow, QApplication, QVBoxLayout
 import appdirs
 import numpy as np
-from playsound import playsound
+import simpleaudio as sa
 
 from ui_annotator import Ui_MainWindow  # Annotator's generated ui file
 from new_session import NewSession
@@ -24,7 +24,6 @@ from goto import GoTo
 class Annotator(QMainWindow):
 
     # signals (must be defined here)
-    saved_audio_file = QtCore.pyqtSignal()
     now_show_info = QtCore.pyqtSignal()
 
     def __init__(self):
@@ -38,7 +37,6 @@ class Annotator(QMainWindow):
         # connect signals (all used to make threads & updates possible)
         self.ui.viewer.show_new_file_info.connect(self.show_new_file_info)
         self.ui.table.show_msg.connect(self.show_timed_msg)
-        self.saved_audio_file.connect(self.save_to_csv)
         self.now_show_info.connect(self.show_file_info)
 
         # connect new and load 
@@ -49,22 +47,18 @@ class Annotator(QMainWindow):
         # class vars updated in load clips
         self.d_fp = None
         self.s_fp = None
-        self.csv_fn = None
         self.ss_fp = None
         self.min_dur = None
         self.f_ind = None
-        self.m_ind = None
         self.wav_files = None
 
-    def load_clips(self, d_fp, s_fp, csv_fn, ss_fp, min_dur, f_ind=0, m_ind=0):
+    def load_clips(self, d_fp, s_fp, ss_fp, min_dur, f_ind=0):
         self.status(self.logger, 'setting up session...')
         self.d_fp = d_fp
         self.s_fp = s_fp
-        self.csv_fn = csv_fn
         self.ss_fp = ss_fp
         self.min_dur = min_dur
         self.f_ind = f_ind
-        self.m_ind = m_ind
 
         self.ui.viewer.min_dur = min_dur
 
@@ -80,7 +74,7 @@ class Annotator(QMainWindow):
             self.status(self.logger, 'No wav files found in {}'.format(self.d_fp))
         else:
             # set up the csv table
-            self.ui.table.load_table(path.join(self.s_fp, self.csv_fn))
+            self.ui.table.load_table(self.s_fp)
 
             # enable buttons and connect to slots
             self.ui.playButton.setEnabled(True)
@@ -88,7 +82,7 @@ class Annotator(QMainWindow):
             self.ui.nextButton.setEnabled(True)
             self.ui.prevButton.setEnabled(True)
             self.ui.playButton.clicked.connect(self.play)
-            self.ui.saveButton.clicked.connect(self.check_tag)
+            self.ui.saveButton.clicked.connect(self.save)
             self.ui.nextButton.clicked.connect(self.next_)
             self.ui.prevButton.clicked.connect(self.prev)
 
@@ -99,7 +93,7 @@ class Annotator(QMainWindow):
             self.ui.actionPrev.setEnabled(True)
             self.ui.actionGoto.setEnabled(True)
             self.ui.actionPlay.triggered.connect(self.play)
-            self.ui.actionSave.triggered.connect(self.check_tag)
+            self.ui.actionSave.triggered.connect(self.save)
             self.ui.actionNext.triggered.connect(self.next_)
             self.ui.actionPrev.triggered.connect(self.prev)
             self.ui.actionGoto.triggered.connect(self.goto)
@@ -116,16 +110,14 @@ class Annotator(QMainWindow):
     def curr_filename(self):
         return self.wav_files[self.f_ind]
 
-    def curr_save_filename(self):
-        return 'v{}-{}.wav'.format(self.curr_filename().split('.')[0], self.m_ind)
-
     def curr_display_msg(self):
-        return 'displaying clip #{} ({}) recorded at {} {} on {}'.format(
+        return 'clip #{} ({}) recorded at {} {} on {} with sampling rate {}'.format(
             self.f_ind, 
             self.curr_filename(), 
             self.ui.viewer.curr_clip.metadata['time'], 
             self.ui.viewer.curr_clip.metadata['timezone'], 
-            self.ui.viewer.curr_clip.metadata['date']
+            self.ui.viewer.curr_clip.metadata['date'],
+            self.ui.viewer.curr_clip.sr
             )
 
     def new_session(self):
@@ -137,8 +129,8 @@ class Annotator(QMainWindow):
         ss_fp, _ = QFileDialog.getOpenFileName(self, filter='(*.yaml)')
 
         try:
-            d_fp, s_fp, csv_fn, min_dur, f_ind, m_ind = session.load(ss_fp)
-            self.load_clips(d_fp, s_fp, csv_fn, ss_fp, float(min_dur), int(f_ind), int(m_ind))
+            d_fp, s_fp, min_dur, f_ind = session.load(ss_fp)
+            self.load_clips(d_fp, s_fp, ss_fp, float(min_dur), int(f_ind))
 
         except FileNotFoundError:
             self.status(self.logger, 'unable to find: \'{}\''.format(ss_fp))
@@ -152,9 +144,7 @@ class Annotator(QMainWindow):
             path, _ = QFileDialog.getSaveFileName(self, filter='(*.yaml)')
 
             try:
-                session.save(path, self.d_fp, self.s_fp, self.csv_fn, 
-                    str(self.min_dur), str(self.f_ind), str(self.m_ind)
-                )
+                session.save(path, self.d_fp, self.s_fp, str(self.f_ind))
                 self.exit()
                 
             except FileNotFoundError:
@@ -171,75 +161,24 @@ class Annotator(QMainWindow):
         self.status(self.logger, 'playing selection...')
 
         def thread_play():
-            playsound('./temp.wav')
+            sa.WaveObject.from_wave_file('temp.wav').play()
             self.now_show_info.emit()
 
         Thread(target=thread_play).start()
 
-    def check_tag(self):
-        tag = self.ui.tag.text()
-
-        if tag == '':
-            msg = 'This audio selection has no label. Proceed?'
-            def yes_fun():
-                self.save_audio_file()
-                alert.done(os.EX_OK)
-            def no_fun():
-                self.status(self.logger, 'save selection canceled')
-                def delay():
-                    time.sleep(1)
-                    self.now_show_info.emit() 
-                Thread(target=delay).start() 
-                alert.done(os.EX_OK)
-            alert = AlertYayNay(self, msg, yes_fun , no_fun)
-            alert.show()
-        else:
-            self.save_audio_file()
-
-    def save_audio_file(self):
-        savepath = path.join(self.s_fp, self.curr_save_filename())
-        self.status(self.logger, 'saving selection to {}...'.format(savepath))
-
-        def thread_save():
-            try:
-                shutil.copy('./temp.wav', savepath)
-                self.saved_audio_file.emit()
-                
-            except IOError as err:
-                self.logger.error(err)
-                self.ui.statusbar.showMessage('Error: unable to save file!')
-
-        Thread(target=thread_save).start()
-
-    def save_to_csv(self):
-        savepath = path.join(self.s_fp, self.curr_save_filename())
-        self.ui.table.add_row([savepath, self.ui.tag.text()])
-        self.m_ind += 1
-        savepath = path.join(self.s_fp, self.curr_save_filename())
-        msg = 'saved new audio file as {}'.format(savepath)
-        self.show_timed_msg(self.logger, msg) 
+    def save(self):
+        start, end = self.ui.viewer.get_curr_selection()
+        full_path = path.join(self.d_fp, self.curr_filename())
+        self.ui.table.add_row([full_path, self.ui.tag.text(), start, end, self.ui.viewer.curr_clip.sr])
 
     def next_(self):
         self.status(self.logger, 'getting next clip...')
         self.f_ind += 1
 
-        if path.exists('temp.wav'):
-            os.remove('temp.wav')
-
         if self.f_ind >= len(self.wav_files):
             msg = 'There are no more wav files.\nYou are done!'
             AlertOk(self, msg, lambda _: self.exit()).show()
         else:
-            # figure out what next m_ind should be  TODO: maybe look in csv instead?
-            highest = -1
-            for filename in os.listdir(self.s_fp):
-                if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
-                    ind = int(filename.split('-')[-1].split('.')[0])
-                    if ind > highest:
-                        highest = cpy(ind)
-
-            self.m_ind = highest + 1
-
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
 
     def prev(self):
@@ -250,16 +189,6 @@ class Annotator(QMainWindow):
             alert = AlertOk(self, msg, lambda _: alert.done(os.EX_OK))
             alert.show()
         else:
-            # figure out what next m_ind should be
-            highest = -1
-            for filename in os.listdir(self.s_fp):
-                if self.curr_filename().split('.')[0] in filename:  # if voc pertains to current file
-                    ind = int(filename.split('-')[-1].split('.')[0])
-                    if ind > highest:
-                        highest = cpy(ind)
-
-            self.m_ind = highest + 1
-
             Thread(target=self.ui.viewer.new_clip, args=[path.join(self.d_fp, self.curr_filename())]).start()
 
     def goto(self):

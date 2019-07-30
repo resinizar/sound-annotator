@@ -31,20 +31,19 @@ class NewSession(QDialog):
         self.s_fp = None
         
     def get_data_folder(self):
-        folder = QFileDialog.getExistingDirectory(self)
-        self.ui.dataFolder.setText(folder)
-        self.d_fp = folder
-        self.logger.info('selected {} as data folder'.format(folder))
+        path = QFileDialog.getExistingDirectory(self)
+        self.ui.dataFolder.setText(path)
+        self.d_fp = path
+        self.logger.info('selected {} as data path'.format(path))
 
     def get_save_folder(self):
-        folder = QFileDialog.getExistingDirectory(self)
-        self.ui.saveFolder.setText(folder)
-        self.s_fp = folder
-        self.logger.info('selected {} as save folder'.format(folder))
+        path, _ = QFileDialog.getSaveFileName(self, filter='(*.csv)')
+        self.ui.saveFolder.setText(path)
+        self.s_fp = path
+        self.logger.info('selected {} as save file'.format(path))
 
     def open_session(self):
         self.annotator.status(self.logger, 'opening new session...')
-        csv_fn = self.ui.csvFileName.text()
         min_dur = float(self.ui.minDur.text())
 
         if self.d_fp is None:
@@ -53,15 +52,15 @@ class NewSession(QDialog):
         if self.s_fp is None:
             self.s_fp = self.ui.saveFolder.text()
 
-        if path.exists(path.join(self.s_fp, csv_fn)):
-            msg = 'The data file {} already exists in {}.\nWould you like to proceed?'.format(
-                csv_fn, self.s_fp)
+        if path.exists(self.s_fp):
+            fp, fn = path.split(self.s_fp)
+            msg = 'The data file {} already exists in {}.\nWould you like to proceed?'.format(fn, fp)
             def yay_fun():
                 self.annotator.load_clips(
-                self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
+                self.d_fp, self.s_fp, 'ss.txt', min_dur, 0)
                 alert.done(os.EX_OK)
             alert = AlertYayNay(self, msg, yay_fun, lambda _: alert.done(os.EX_OK))
             alert.show()
 
         else:
-            self.annotator.load_clips(self.d_fp, self.s_fp, csv_fn, 'ss.txt', min_dur, 0, 0)
+            self.annotator.load_clips(self.d_fp, self.s_fp, 'ss.txt', min_dur, 0)

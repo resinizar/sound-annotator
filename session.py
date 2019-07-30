@@ -6,14 +6,12 @@ import yaml
 logger = logging.getLogger('session.py')
 
 
-def save(fp, datapath, savepath, csvfilename, min_dur, f_ind, m_ind):
+def save(fp, datapath, savepath, min_dur, f_ind):
 	d = {
 		'audio data path': datapath,
-		'save path': savepath,
-		'csv filename': csvfilename,
+		'csv file save path': savepath,
 		'minimum clip duration': min_dur,
-		'file index': f_ind,
-		'mini clip index': m_ind
+		'file index': f_ind
 	}
 	with open(fp, 'w') as file:
 		yaml.dump(d, file)
@@ -29,9 +27,7 @@ def load(fp):
 	
 	return (
 		d['audio data path'], 
-		d['save path'], 
-		d['csv filename'], 
+		d['csv file save path'], 
 		d['minimum clip duration'], 
-		d['file index'], 
-		d['mini clip index']
+		d['file index']
 	)
