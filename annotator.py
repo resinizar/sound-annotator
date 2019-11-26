@@ -65,6 +65,7 @@ class Annotator(QMainWindow):
         # get all wav files contained in given directory or subdirectories
         self.wav_files = []
         for rootdir, dirs, filenames in os.walk(self.d_fp):
+            filenames.sort()
             for filename in filenames:
                 if 'wav' in filename or 'WAV' in filename:
                     self.wav_files.append(filename)
@@ -144,7 +145,7 @@ class Annotator(QMainWindow):
             path, _ = QFileDialog.getSaveFileName(self, filter='(*.yaml)')
 
             try:
-                session.save(path, self.d_fp, self.s_fp, str(self.f_ind))
+                session.save(path, self.d_fp, self.s_fp, self.min_dur, str(self.f_ind))
                 self.exit()
                 
             except FileNotFoundError:
@@ -165,6 +166,13 @@ class Annotator(QMainWindow):
             self.now_show_info.emit()
 
         Thread(target=thread_play).start()
+
+    # def save_to_wav(self):
+    #     start, end = self.ui.viewer.get_curr_selection()
+    #     self.ui.viewer.curr_clip
+    #     clip_16bit = (self.ui.viewer.curr_clip.data[start:end]).astype(np.int16)
+    #     wavfile.write('./temp.wav', self.sr, clip_16bit)
+
 
     def save(self):
         start, end = self.ui.viewer.get_curr_selection()
