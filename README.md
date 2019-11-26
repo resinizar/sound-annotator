@@ -4,11 +4,11 @@ PyQt5 GUI for annotating sound events manually from a spectrogram.
 This application is not perfect, but is use-able. I have only tested it on macOS (Mojave and Catalina). The application is meant to look at wav files and works best for those created by AudioMoth.  
 
 ## Set up
-Clone the repo. For help see https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository. 
+Clone the repo. For help check these [instructions](https://help.github.com/en/github/creating-cloning-and-archiving-repositories/cloning-a-repository). 
 
-Create a virtual environment and activate it. For help see https://docs.python.org/3/tutorial/venv.html.
+Create a virtual environment and activate it. For help check these [instructions](https://docs.python.org/3/tutorial/venv.html).
 
-Install pip if needed. https://pip.pypa.io/en/stable/installing/
+Install pip if needed. For help check these [instructions](https://pip.pypa.io/en/stable/installing/).
 
 Download dependencies by running:
 `pip install -r requirements.txt`
