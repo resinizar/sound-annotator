@@ -33,9 +33,11 @@ File -> Load Session
 This opens a file browser where you need to select a configuration file (.yaml). It will open the session to the file you left off on and it will continue saving to the same save file. 
 
 ## Create an annotation
-Drag the mouse over a part of the spectrogram. Press the play button or Action -> Play to listen to the selection. Press the save button or Action -> Save to save an annotation.
+Drag the mouse over a part of the spectrogram. Press the play button or Action -> Play to listen to the selection. Press the save button or Action -> Save to save an annotation with the specified tag in the textfield above the buttons.
 
 ![Alt text](/screenshots/create_anno.png?raw=true)
+
+The annotation has a filepath (fp) which is the full filepath to where the audio file resides. Next is the tag which is specified by the user in the textfield. The next two entries are the start and end index of the selection in the original audio data. Finally the sampling rate (sr) is specified in case the data is loaded as a spectrogram with a different sampling rate than the original audio file.
 
 ## Edit an annotation
 Find the information you would like to edit in the table. Click on an entry to edit it. The original csv file is changed to match when you click elsewhere. Currently there is no way to delete a row but you can erase the entry. 
